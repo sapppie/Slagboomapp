@@ -47,7 +47,8 @@ void setup()
 void slagBoom(long duration,int distance)
 {
   
-int avgrange = 4;
+
+  int avgrange = 4;
 
 for (int i =  1; i < avgrange; i++){
     digitalWrite(trig,LOW);
@@ -60,7 +61,7 @@ digitalWrite(trig,LOW);
 duration = pulseIn(echo,HIGH);
 distance = duration*0.034/2;
     sum += distance;
-    delay(10);
+    delay(500);
                                    }
   int gemiddelde = sum / 4;
   Serial.print("Distance ");
@@ -81,15 +82,28 @@ else
 
 void Afstand(long duration, int distance)
 {
-         digitalWrite(trig,LOW);
-         delayMicroseconds(2);
+  int avgrange = 4;
+         for (int i =  1; i < avgrange; i++){
+    digitalWrite(trig,LOW);
+delayMicroseconds(2);
 
-         digitalWrite(trig,HIGH);
-         delayMicroseconds(10);
-         digitalWrite(trig,LOW);
+digitalWrite(trig,HIGH);
+delayMicroseconds(10);
+digitalWrite(trig,LOW);
 
-         duration = pulseIn(echo,HIGH);
-         distance = duration*0.034/2;
+duration = pulseIn(echo,HIGH);
+distance = duration*0.034/2;
+    sum += distance;
+    Serial.print("tussen ");
+Serial.println(distance);
+
+                                   }
+  int gemiddelde = sum / 4;
+  Serial.print("Gemiddled ");
+Serial.println(gemiddelde);
+sum = 0;
+    delay(1000);
+
 }
 
 void loop()
@@ -103,10 +117,35 @@ void loop()
    Serial.println("Application connected");
    while (ethernetClient.connected()) 
    {
+    int avgrange = 4;
+         for (int i =  1; i < avgrange; i++){
+    digitalWrite(trig,LOW);
+delayMicroseconds(2);
+
+digitalWrite(trig,HIGH);
+delayMicroseconds(10);
+digitalWrite(trig,LOW);
+
+duration = pulseIn(echo,HIGH);
+distance = duration*0.034/2;
+    sum += distance;
+    Serial.print("tussen ");
+Serial.println(distance);
+
+                                   }
+  int gemiddelde = sum / 4;
+  Serial.print("Gemiddled ");
+Serial.println(gemiddelde);
+sum = 0;
+    delay(1000);
+    if(gemiddelde <= 10){
+            switchDefault(0,false); Serial.println("Set 0 state to \"CLOSED\"");Slagboom.writeMicroseconds(1500);
+            }
      while (ethernetClient.available())
       {
+         
          char inByte = ethernetClient.read();   // Get byte from the client.
-         executeCommand(inByte);  // Wait for command to execute
+         executeCommand(inByte,gemiddelde);  // Wait for command to execute
          inByte = NULL;                         // Reset the read byte.
       } 
    }
@@ -124,7 +163,7 @@ void switchDefault(byte actionDevice, bool state)
 // Implementation of (simple) protocol between app and Arduino
 // Request (from app) is single char ('a', 's', 't', 'i' etc.)
 // Response (to app) is 4 chars  (not all commands demand a response)
-void executeCommand(char cmd)
+void executeCommand(char cmd, int gemiddelde)
 {     
          char buf[4] = {'\0', '\0', '\0', '\0'};
 
@@ -132,16 +171,8 @@ void executeCommand(char cmd)
          Serial.print("["); Serial.print(cmd); Serial.print("] -> ");
          switch (cmd) {
          case 'a': // Report sensor value to the app  
-         digitalWrite(trig,LOW);
-         delayMicroseconds(2);
-
-         digitalWrite(trig,HIGH);
-         delayMicroseconds(10);
-         digitalWrite(trig,LOW);
-
-         duration = pulseIn(echo,HIGH);
-         distance = duration*0.034/2;
-         sensorValue0 = distance;                          // update sensor0 value
+         
+         sensorValue0 = gemiddelde;                          // update sensor0 value
          intToCharBuf(sensorValue0, buf, 4);               // convert to charbuffer
          server.write(buf, 4);                             // response is always 4 chars (\n included)
          Serial.print("Sensor0: "); Serial.println(sensorValue0);
@@ -153,18 +184,8 @@ void executeCommand(char cmd)
             intToCharBuf(sensorValue1, buf, 4);               // convert to charbuffer
             server.write(buf, 4);                             // response is always 4 chars (\n included)
             Serial.print("Sensor1: "); Serial.println(buf);
-            digitalWrite(trig,LOW);
-         delayMicroseconds(2);
-
-         digitalWrite(trig,HIGH);
-         delayMicroseconds(10);
-         digitalWrite(trig,LOW);
-
-         duration = pulseIn(echo,HIGH);
-         distance = duration*0.034/2;
-            if(distance <= 10){
-            switchDefault(0,true); Serial.println("Set 0 state to \"ON\"");Slagboom.writeMicroseconds(1500);
-            }
+            
+            
             break;
          /*case 's': // Report switch state to the app
             if (pinState[actionDevice]) { server.write(" ON\n"); Serial.println("Pin state is ON"); }  // always send 4 chars
@@ -175,7 +196,8 @@ void executeCommand(char cmd)
             
          case 'x': //toggle device 0
             if (pinState[0]) { switchDefault(0,false); Serial.println("Set 0 state to \"CLOSED\""); Slagboom.writeMicroseconds(1500); }
-            else { switchDefault(0,true); Serial.println("Set 0 state to \"OPEN\""); Slagboom.writeMicroseconds(0);}             
+            else { switchDefault(0,true); Serial.println("Set 0 state to \"OPEN\""); Slagboom.writeMicroseconds(0);
+            }             
             break;
             
          case 'y': //toggle device 1
