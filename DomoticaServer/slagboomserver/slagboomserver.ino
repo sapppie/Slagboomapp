@@ -1,52 +1,30 @@
-// Arduino Domotica server with Klik-Aan-Klik-Uit-controller 
-//
-// By Sibbele Oosterhaven, Computer Science NHL, Leeuwarden
-// V1.2, 16/12/2016, published on BB. Works with Xamarin (App: Domotica)
-//
-// Hardware: Arduino Uno, Ethernet shield W5100; RF transmitter on RFpin; debug LED for serverconnection on ledPin
-// The Ethernet shield uses pin 10, 11, 12 and 13
-// Use Ethernet2.h libary with the (new) Ethernet board, model 2
-// IP address of server is based on DHCP. No fallback to static IP; use a wireless router
-// Arduino server and smartphone should be in the same network segment (192.168.1.x)
-// https://github.com/hjgode/homewatch/blob/master/arduino/libraries/NewRemoteSwitch/README.TXT
-// kaku, Gamma, APA3, codes based on Arduino -> Voorbeelden -> NewRemoteSwitch -> ShowReceivedCode
-// 1 Addr 21177114 unit 0 on/off, period: 270us   replace with your own code
-// 2 Addr 21177114 unit 1 on/off, period: 270us
-// 3 Addr 21177114 unit 2 on/off, period: 270us
-// Supported KaKu devices -> find, download en install corresponding libraries
-#define unitCodeApa3      27476178  // replace with your own code
-
 // Include files.
 #include <SPI.h>                  // Ethernet shield uses SPI-interface
 #include <Ethernet.h>             // Ethernet library (use Ethernet2.h for new ethernet shield v2)
-#include <NewRemoteTransmitter.h> // Remote Control, Gamma, APA3
-
+#include <Servo.h>
+Servo Slagboom;
 // Set Ethernet Shield MAC address  (check yours)
 byte mac[] = { 0x40, 0x6c, 0x8f, 0x36, 0x84, 0x8a }; // Ethernet adapter shield S. Oosterhaven
-IPAddress ip(192, 168, 1, 3);
+IPAddress ip(192, 168, 0, 106);
 int ethPort = 3300;                                  // Take a free port (check your router)
 
-#define RFPin        3  // output, pin to control the RF-sender (and Click-On Click-Off-device)
-#define lowPin       5  // output, always LOW
-#define highPin      6  // output, always HIGH
-#define switchPin    7  // input, connected to some kind of inputswitch
-#define ledPin       8  // output, led used for "connect state": blinking = searching; continuously = connected
-#define infoPin      9  // output, more information
-#define sensorPin0   0  // sensor0 value
-#define sensorPin1   1  // sensor1 value
-
-
 EthernetServer server(ethPort);              // EthernetServer instance (listening on port <ethPort>).
-NewRemoteTransmitter apa3Transmitter(unitCodeApa3, RFPin, 266, 3);  // APA3 (Gamma) remote, use pin <RFPin> 
 
 //byte actionDevice = 0;                    // Variable to store Action Device id (0, 1, 2)
 bool pinState[3] = {false, false, false}; // Variable to store actual on/off state
 bool pinChange = false;                   // Variable to store actual pin change
 int sensorValue0 = 0;                    // Variable to store actual sensor0 value
 int sensorValue1 = 0;                    // Variable to store actual sensor1 value
+const int trig = 4;
+const int echo = 3;
+int Boomopen = 500;
+int Boomdicht = 0;
+long duration;
+int distance;
 
 void setup()
 {
+  Slagboom.attach(2);
    Serial.begin(9600);
    //while (!Serial) { ; }               // Wait for serial port to connect. Needed for Leonardo only.
 
@@ -56,31 +34,21 @@ void setup()
    pinMode(switchPin, INPUT);            // hardware switch, for changing pin state
    pinMode(lowPin, OUTPUT);
    pinMode(highPin, OUTPUT);
-   pinMode(RFPin, OUTPUT);
    pinMode(ledPin, OUTPUT);
-   pinMode(infoPin, OUTPUT);
+   pinMode(trig, OUTPUT);
+pinMode(echo, INPUT);
    
    //Default states
    digitalWrite(switchPin, HIGH);        // Activate pullup resistors (needed for input pin)
    digitalWrite(lowPin, LOW);
    digitalWrite(highPin, HIGH);
-   digitalWrite(RFPin, LOW);
    digitalWrite(ledPin, LOW);
-   digitalWrite(infoPin, LOW);
+   Slagboom.writeMicroseconds(0);
 
-   //Try to get an IP address from the DHCP server.
-   /*if (Ethernet.begin(mac) == 0)
-   {
-      Serial.println("Could not obtain IP-address from DHCP -> do nothing");
-      while (true){     // no point in carrying on, so do nothing forevermore; check your router
-      }
-   }*/
+   
    Ethernet.begin(mac, ip);
    
-   //Serial.print("LED (for connect-state and pin-state) on pin "); Serial.println(ledPin);
-   //Serial.print("Input switch on pin "); Serial.println(switchPin);
    Serial.println("Ethernetboard connected (pins 10, 11, 12, 13 and SPI)");
-   //Serial.println("Connect to DHCP source in local network (blinking led -> waiting for connection)");
    
    //Start the ethernet server.
    server.begin();
@@ -96,34 +64,58 @@ void setup()
    //signalNumber(ledPin, IPnr);
 }
 
+void slagBoom(long duration,int distance)
+{
+  digitalWrite(trig,LOW);
+delayMicroseconds(2);
+
+digitalWrite(trig,HIGH);
+delayMicroseconds(10);
+digitalWrite(trig,LOW);
+
+duration = pulseIn(echo,HIGH);
+distance = duration*0.034/2;
+
+if (distance <= 10)
+{
+  Serial.print("Distance ");
+  Serial.println(distance);
+  Slagboom.writeMicroseconds(0);  
+}
+else
+{
+  Slagboom.writeMicroseconds(1500);
+  Serial.print("Distance ");
+Serial.println(distance);
+delay(100);
+}
+}
+
+void Afstand(long duration, int distance)
+{
+         digitalWrite(trig,LOW);
+         delayMicroseconds(2);
+
+         digitalWrite(trig,HIGH);
+         delayMicroseconds(10);
+         digitalWrite(trig,LOW);
+
+         duration = pulseIn(echo,HIGH);
+         distance = duration*0.034/2;
+}
+
 void loop()
 {
-   // Listen for incomming connection (app)
+  slagBoom(duration,distance);
    EthernetClient ethernetClient = server.available();
    if (!ethernetClient) {
-      //blink(ledPin);
       return; // wait for connection and blink LED
    }
 
    Serial.println("Application connected");
-   //digitalWrite(ledPin, LOW);
-
-   // Do what needs to be done while the socket is connected.
    while (ethernetClient.connected()) 
    {
-      //checkEvent(switchPin, pinState[actionDevice]);            // update pin state
-      //sensorValue0 = readSensor(0, 100);                        // update sensor0 value
-      //sensorValue1 = readSensor(1, 100);                        // update sensor1 value
-        
-      /*if (pinChange) {
-         if (pinState[actionDevice]) { digitalWrite(ledPin, HIGH); switchDefault(true); }
-         else { switchDefault(false); digitalWrite(ledPin, LOW);}
-         pinChange = false;
-         executeCommand('s', actionDevice);
-      }*/
-   
-      // Execute when byte is received.
-      while (ethernetClient.available())
+     while (ethernetClient.available())
       {
          char inByte = ethernetClient.read();   // Get byte from the client.
          executeCommand(inByte);  // Wait for command to execute
@@ -131,18 +123,14 @@ void loop()
       } 
    }
    Serial.println("Application disonnected");
-   
 }
 
 // Choose and switch your Kaku device, state is true/false (HIGH/LOW)
 void switchDefault(byte actionDevice, bool state)
 {   
-   apa3Transmitter.sendUnit(actionDevice, state);          // APA3 Kaku (0/1/2, high/low)
    pinState[actionDevice] = state;    
    if(state){server.write(" ON\n");}
    else{server.write("OFF\n");}
-   //Serial.println((String)"sendunitsettings: " + actionDevice + (String)" " + state);            
-   //delay(100);
 }
 
 // Implementation of (simple) protocol between app and Arduino
@@ -156,28 +144,50 @@ void executeCommand(char cmd)
          Serial.print("["); Serial.print(cmd); Serial.print("] -> ");
          switch (cmd) {
          case 'a': // Report sensor value to the app  
-            sensorValue0 = readSensor(0, 100);                // update sensor0 value
-            intToCharBuf(sensorValue0, buf, 4);               // convert to charbuffer
-            server.write(buf, 4);                             // response is always 4 chars (\n included)
-            Serial.print("Sensor0: "); Serial.println(buf);
-            break;
+         digitalWrite(trig,LOW);
+         delayMicroseconds(2);
+
+         digitalWrite(trig,HIGH);
+         delayMicroseconds(10);
+         digitalWrite(trig,LOW);
+
+         duration = pulseIn(echo,HIGH);
+         distance = duration*0.034/2;
+         sensorValue0 = distance;                // update sensor0 value
+         intToCharBuf(sensorValue0, buf, 4);               // convert to charbuffer
+         server.write(buf, 4);                             // response is always 4 chars (\n included)
+         Serial.print("Sensor0: "); Serial.println(buf);
+            
+         break;
+         
          case 'b': // Report sensor value to the app  
             sensorValue1 = readSensor(1, 100);                // update sensor1 value
             intToCharBuf(sensorValue1, buf, 4);               // convert to charbuffer
             server.write(buf, 4);                             // response is always 4 chars (\n included)
             Serial.print("Sensor1: "); Serial.println(buf);
+            digitalWrite(trig,LOW);
+         delayMicroseconds(2);
+
+         digitalWrite(trig,HIGH);
+         delayMicroseconds(10);
+         digitalWrite(trig,LOW);
+
+         duration = pulseIn(echo,HIGH);
+         distance = duration*0.034/2;
+            if(distance <= 10){
+            switchDefault(0,true); Serial.println("Set 0 state to \"ON\"");Slagboom.writeMicroseconds(1500);
+            }
             break;
          /*case 's': // Report switch state to the app
             if (pinState[actionDevice]) { server.write(" ON\n"); Serial.println("Pin state is ON"); }  // always send 4 chars
             else { server.write("OFF\n"); Serial.println("Pin state is OFF"); }
             break;*/
          case 'i':    
-            digitalWrite(infoPin, HIGH);
             break;
             
          case 'x': //toggle device 0
-            if (pinState[0]) { switchDefault(0,false); Serial.println("Set 0 state to \"OFF\""); }
-            else { switchDefault(0,true); Serial.println("Set 0 state to \"ON\"");}             
+            if (pinState[0]) { switchDefault(0,false); Serial.println("Set 0 state to \"CLOSED\""); Slagboom.writeMicroseconds(1500); }
+            else { switchDefault(0,true); Serial.println("Set 0 state to \"OPEN\""); Slagboom.writeMicroseconds(0);}             
             break;
             
          case 'y': //toggle device 1
@@ -190,8 +200,6 @@ void executeCommand(char cmd)
             else { switchDefault(2,true); Serial.println("Set 2 state to \"ON\"");}              
             break;
             
-         default:
-            digitalWrite(infoPin, LOW);
          }
 }
 
