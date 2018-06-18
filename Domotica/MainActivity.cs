@@ -52,7 +52,6 @@ namespace Domotica
         // Variables (components/controls)
         // Controls on GUI
         Button buttonConnect, device1;
-        Button buttonChangePinState;
         TextView textViewServerConnect, textViewTimerStateValue, Status1, Sensor1;
         public TextView textViewChangePinStateValue, textViewSensorValue, textViewDebugValue;
         EditText editTextIPAddress, editTextIPPort;
@@ -71,7 +70,6 @@ namespace Domotica
 
             // find and set the controls, so it can be used in the code
             buttonConnect = FindViewById<Button>(Resource.Id.buttonConnect);
-            buttonChangePinState = FindViewById<Button>(Resource.Id.buttonChangePinState);
             textViewTimerStateValue = FindViewById<TextView>(Resource.Id.textViewTimerStateValue);
             textViewServerConnect = FindViewById<TextView>(Resource.Id.textViewServerConnect);
             editTextIPAddress = FindViewById<EditText>(Resource.Id.editTextIPAddress);
@@ -147,19 +145,7 @@ namespace Domotica
 
 
             //Add the "Change pin state" button handler.
-            if (buttonChangePinState != null)
-            {
-                buttonChangePinState.Click += (sender, e) =>
-                {
-                    UpdateGUI(executeCommand(commandList[0].Item1), commandList[0].Item2);
-                    UpdateGUI(executeCommand(commandList[1].Item1), commandList[1].Item2);
-                    UpdateGUI(executeCommand(commandList[2].Item1), commandList[2].Item2);
-
-                    UpdateGUI(executeCommand(commandList[2].Item1), commandList[2].Item2);
-                    UpdateGUI(executeCommand(commandList[1].Item1), commandList[1].Item2);
-                    UpdateGUI(executeCommand(commandList[0].Item1), commandList[0].Item2);
-                };
-            }
+            
         }
 
 
@@ -231,7 +217,6 @@ namespace Domotica
                     textViewServerConnect.SetTextColor(color);
                     buttonConnect.Enabled = butConEnabled;
                 }
-                buttonChangePinState.Enabled = butPinEnabled;
             });
         }
 

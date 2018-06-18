@@ -60,23 +60,20 @@ namespace Domotica
 		public partial class Id
 		{
 			
-			// aapt resource value: 0x7f06000d
-			public const int Sensor1 = 2131099661;
-			
 			// aapt resource value: 0x7f06000c
-			public const int Status1 = 2131099660;
+			public const int Sensor1 = 2131099660;
 			
-			// aapt resource value: 0x7f06000f
-			public const int abort = 2131099663;
+			// aapt resource value: 0x7f06000b
+			public const int Status1 = 2131099659;
 			
-			// aapt resource value: 0x7f06000a
-			public const int buttonChangePinState = 2131099658;
+			// aapt resource value: 0x7f06000e
+			public const int abort = 2131099662;
 			
 			// aapt resource value: 0x7f060009
 			public const int buttonConnect = 2131099657;
 			
-			// aapt resource value: 0x7f06000b
-			public const int device1 = 2131099659;
+			// aapt resource value: 0x7f06000a
+			public const int device1 = 2131099658;
 			
 			// aapt resource value: 0x7f060007
 			public const int editTextIPAddress = 2131099655;
@@ -84,8 +81,8 @@ namespace Domotica
 			// aapt resource value: 0x7f060008
 			public const int editTextIPPort = 2131099656;
 			
-			// aapt resource value: 0x7f06000e
-			public const int exit = 2131099662;
+			// aapt resource value: 0x7f06000d
+			public const int exit = 2131099661;
 			
 			// aapt resource value: 0x7f060000
 			public const int relativeLayout1 = 2131099648;

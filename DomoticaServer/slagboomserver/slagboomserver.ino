@@ -31,18 +31,12 @@ void setup()
    Serial.println("Domotica project, Arduino Domotica Server\n");
    
    //Init I/O-pins
-   pinMode(switchPin, INPUT);            // hardware switch, for changing pin state
-   pinMode(lowPin, OUTPUT);
-   pinMode(highPin, OUTPUT);
-   pinMode(ledPin, OUTPUT);
+  
    pinMode(trig, OUTPUT);
 pinMode(echo, INPUT);
    
    //Default states
-   digitalWrite(switchPin, HIGH);        // Activate pullup resistors (needed for input pin)
-   digitalWrite(lowPin, LOW);
-   digitalWrite(highPin, HIGH);
-   digitalWrite(ledPin, LOW);
+   
    Slagboom.writeMicroseconds(0);
 
    
