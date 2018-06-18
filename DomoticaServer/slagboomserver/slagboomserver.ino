@@ -20,31 +20,17 @@ const int echo = 3;
 int Boomopen = 500;
 int Boomdicht = 0;
 long duration;
-int distance;
+int distance, sum;
 
 void setup()
 {
-  Slagboom.attach(2);
+   Slagboom.attach(2);
    Serial.begin(9600);
-   //while (!Serial) { ; }               // Wait for serial port to connect. Needed for Leonardo only.
-
-   Serial.println("Domotica project, Arduino Domotica Server\n");
-   
-   //Init I/O-pins
-  
    pinMode(trig, OUTPUT);
-pinMode(echo, INPUT);
-   
-   //Default states
-   
+   pinMode(echo, INPUT);
    Slagboom.writeMicroseconds(0);
-
-   
    Ethernet.begin(mac, ip);
-   
    Serial.println("Ethernetboard connected (pins 10, 11, 12, 13 and SPI)");
-   
-   //Start the ethernet server.
    server.begin();
 
    // Print IP-address and led indication of server state
@@ -60,7 +46,11 @@ pinMode(echo, INPUT);
 
 void slagBoom(long duration,int distance)
 {
-  digitalWrite(trig,LOW);
+  
+int avgrange = 4;
+
+for (int i =  1; i < avgrange; i++){
+    digitalWrite(trig,LOW);
 delayMicroseconds(2);
 
 digitalWrite(trig,HIGH);
@@ -69,19 +59,23 @@ digitalWrite(trig,LOW);
 
 duration = pulseIn(echo,HIGH);
 distance = duration*0.034/2;
-
-if (distance <= 10)
-{
+    sum += distance;
+    delay(10);
+                                   }
+  int gemiddelde = sum / 4;
   Serial.print("Distance ");
-  Serial.println(distance);
+Serial.println(gemiddelde);
+
+sum = 0;
+if (gemiddelde <= 10)
+{
+  
   Slagboom.writeMicroseconds(0);  
 }
 else
 {
   Slagboom.writeMicroseconds(1500);
-  Serial.print("Distance ");
-Serial.println(distance);
-delay(100);
+  
 }
 }
 
@@ -147,10 +141,10 @@ void executeCommand(char cmd)
 
          duration = pulseIn(echo,HIGH);
          distance = duration*0.034/2;
-         sensorValue0 = distance;                // update sensor0 value
+         sensorValue0 = distance;                          // update sensor0 value
          intToCharBuf(sensorValue0, buf, 4);               // convert to charbuffer
          server.write(buf, 4);                             // response is always 4 chars (\n included)
-         Serial.print("Sensor0: "); Serial.println(buf);
+         Serial.print("Sensor0: "); Serial.println(sensorValue0);
             
          break;
          
@@ -196,7 +190,21 @@ void executeCommand(char cmd)
             
          }
 }
+void distanceAv(int trig,int echo,long duration,int distance){
+  int avgrange = 6;
+  for (int i =  1; i < avgrange; i++){
+    Afstand(duration,distance);
+    
 
+sum += distance;
+delay(10);
+  }
+  int gemiddelde = sum / 6;
+  Serial.print("Distance ");
+Serial.println(gemiddelde);
+
+sum = 0;
+}
 // read value from pin pn, return value is mapped between 0 and mx-1
 int readSensor(byte pn, int mx)
 {
